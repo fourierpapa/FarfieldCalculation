@@ -1,0 +1,2 @@
+E = getresult('T', 'E');
+matlabsave("E_Field.mat",E);
