@@ -8,19 +8,24 @@ close all;
 clc;
 dbstop if error
 
+tic
+
 % load functions
 addpath(genpath('./utils'))
 addpath(genpath('../src'))
+dataAddr = "./model/comsol/data/";
+dataName = "FullField4x4";
+% dataName = "Bloch";
 
 %% 定义参数
 % physical parameters
 % 载入待计算的场
-ExRealorig = load('./model/comsol/data/BlochExReal.txt');
-EyRealorig = load('./model/comsol/data/BlochEyReal.txt');
-EzRealorig = load('./model/comsol/data/BlochEzReal.txt');
-ExImagorig = load('./model/comsol/data/BlochExImag.txt');
-EyImagorig = load('./model/comsol/data/BlochEyImag.txt');
-EzImagorig = load('./model/comsol/data/BlochEzImag.txt');
+ExRealorig = load(strcat(dataAddr,dataName,'ExReal.txt'));
+EyRealorig = load(strcat(dataAddr,dataName,'EyReal.txt'));
+EzRealorig = load(strcat(dataAddr,dataName,'EzReal.txt'));
+ExImagorig = load(strcat(dataAddr,dataName,'ExImag.txt'));
+EyImagorig = load(strcat(dataAddr,dataName,'EyImag.txt'));
+EzImagorig = load(strcat(dataAddr,dataName,'EzImag.txt'));
 
 % Exorig = load('./comsol/data/FullFieldEx.txt');
 % Eyorig = load('./comsol/data/FullFieldEy.txt');
@@ -103,7 +108,9 @@ thetayFarFullSize = atand(ky/k0);
 [thetaX,thetaY] = meshgrid(thetaxFarFullSize,thetayFarFullSize);
 thetaFarFullSize = thetaxFarFullSize;
 
-tic
+disp(['开始远场计算'])
+toc
+
 % 计算远场
 EFarFullSize  = Q(ENear);
 ExFarFullSize = Q(Ex);
@@ -117,7 +124,7 @@ toc
 kx = 0.1;
 p = 360e-9;
 NA = kx*(2*pi/p)/k0
-% NA = 0.8
+NA = 0.8
 
 % 计算每个元素与a的绝对差值
 NALimitAngle=atand(NA)*2;
@@ -169,18 +176,24 @@ S3GammaCalculate = S3(thetax==0,thetay==0)
 
 EFarPlot = S0;
 figure
+title(EFarPlot)
 subplot(1,2,1);plotFarField2D(thetax,thetay,(abs(EFarPlot)));xlabel('deg'), ylabel('deg');title('intensityFarField');axis equal;colorbar
 subplot(1,2,2);plotFarField2D(thetax,thetay,angle(EFarPlot));xlabel('deg'), ylabel('deg');title('phaseFarField')    ;axis equal;colorbar
 
+% 图如果太小，就需要插值放大
+scalingRatio = 1;
+
 cmap = sinebow(256); % 这个调色板好看
 [img,cbar] = visualizeComplex(EFarPlot,cmap);
-img = imresize(img,10*size(img(:,:,1)),'bilinear');
-figure,imshow(img)                                                         % 画复振幅的幅值和相位
+img = imresize(img,scalingRatio*size(img(:,:,1)),'bilinear');
+figure,imshow(img)                                   % 画复振幅的幅值和相位
 
 wavefront_jones = cat(3,ExS,EyS);
-wavefront_jones = imresize(wavefront_jones,10*size(wavefront_jones(:,:,1)),'bilinear');
 
-visualizePolarization(wavefront_jones, cmap, 10);                          % 画偏振图
+wavefront_jones = imresize(wavefront_jones,scalingRatio*size(wavefront_jones(:,:,1)),'bilinear');
+
+visualizePolarization(wavefront_jones, cmap, 31);                          % 画偏振图
+
 
 % =========================================================================
 
