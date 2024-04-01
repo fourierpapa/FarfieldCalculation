@@ -5,6 +5,7 @@ function [fig] = visualizePolarization(jvec, cmap, n_grid)
 ex = jvec(:,:,1);
 ey = jvec(:,:,2);
 amp = sqrt(abs(ex).^2 + abs(ey).^2);
+SDelta = -(angle(ex) - angle(ey));
 
 amin = 0;
 amax = max(amp(:));
@@ -23,11 +24,19 @@ for i = 1:n_grid
         ix = round(xc(i+1));
         iy = round(yc(j+1));
         th = linspace(0,2*pi,100);
-        xe = ix + scale*abs(ex(iy,ix)).*cos(th+angle(ex(iy,ix)));
-        ye = iy + scale*abs(ey(iy,ix)).*cos(th+angle(ey(iy,ix)));
-        hold on,plot(xe,ye,'color',[1.0,0.3,0.3],'linewidth',1.5)
-%         drawnow;
+        anglePolarex = angle(ex(iy,ix));
+        anglePolarey = angle(ey(iy,ix));
+        xe = ix + scale*abs(ex(iy,ix)).*cos(th+anglePolarex);
+        ye = iy + scale*abs(ey(iy,ix)).*cos(th+anglePolarey);
+        hold on;
+        % plot(xe,ye,'color',[1.0,0.3,0.3],'linewidth',1.5);
+        if SDelta(iy,ix) < 0
+            plot(xe,ye,'red','LineWidth',1.5);
+        else
+            SDelta(iy,ix) > 0;
+            plot(xe,ye,'blue','LineWidth',1.5);
+            %         drawnow;
+        end
     end
-end
 
 end
