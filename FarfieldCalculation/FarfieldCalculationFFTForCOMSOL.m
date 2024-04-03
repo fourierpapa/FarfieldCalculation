@@ -13,13 +13,14 @@ tic
 % load functions
 addpath(genpath('./utils'))
 addpath(genpath('../src'))
-dataAddr = "./model/comsol/data/";
-dataName = "FullField4x4";
-% dataName = "Bloch";
 
 %% 定义参数
 % physical parameters
 % 载入待计算的场
+dataAddr = "./model/comsol/data/";
+dataName = "1x8Bloch2Unit/";
+% dataName = "Bloch";
+
 ExRealorig = load(strcat(dataAddr,dataName,'ExReal.txt'));
 EyRealorig = load(strcat(dataAddr,dataName,'EyReal.txt'));
 EzRealorig = load(strcat(dataAddr,dataName,'EzReal.txt'));
@@ -91,7 +92,8 @@ subplot(3,2,6);imagesc(xum,yum,angle(Ez));xlabel('um');ylabel('um');title('phase
 % 定义操作
 
 Z  = @(x) zeropad(x,params.nullpixels);                                           % zero-padded sample
-Q  = @(x) fftshift(fft2(fftshift(Z(x))));
+% Q  = @(x) fftshift(fft2(fftshift(Z(x))));
+Q  = @(x) gather(fftshift(fft2(fftshift(gpuArray(Z(x))))));
 
 % 拓展图片
 ENearZeropad    = Z(ENear);
@@ -103,8 +105,8 @@ kx = pi/params.pxsize*(-1:2/(M-1):1);
 ky = pi/params.pxsize*(-1:2/(N-1):1);
 [kX,kY] = meshgrid(kx,ky);
 
-thetaxFarFullSize = atand(kx/k0);
-thetayFarFullSize = atand(ky/k0);
+thetaxFarFullSize = asind(kx/k0);
+thetayFarFullSize = asind(ky/k0);
 [thetaX,thetaY] = meshgrid(thetaxFarFullSize,thetayFarFullSize);
 thetaFarFullSize = thetaxFarFullSize;
 
@@ -123,17 +125,18 @@ toc
 %% 寻找角度截断index
 kx = 0.1;
 p = 360e-9;
-NA = kx*(2*pi/p)/k0
-NA = 0.8
+NA = kx*(2*pi/p)/k0;
+NA = 0.99;
+NA
 
 % 计算每个元素与a的绝对差值
-NALimitAngle=atand(NA)*2;
+NALimitAngle = asind(NA)
 diff = abs(thetaFarFullSize - NALimitAngle);
 % 找到最小差值对应的索引
 [~, idx] = min(diff);
 
 % 重新按照角度截断裁剪
-C  = @(x) imgcrop(x,numel(thetaFarFullSize)-idx);                                  % 裁剪操作
+C  = @(x) imgcrop(x,numel(thetaFarFullSize)-idx);                           % 裁剪操作
 
 EFarFullSize(tand(thetaX).^2+tand(thetaY).^2>tand(NALimitAngle).^2) = 0;
 EFar  = C(EFarFullSize);                     % zero-padded sample
@@ -180,7 +183,7 @@ title(EFarPlot)
 subplot(1,2,1);plotFarField2D(thetax,thetay,(abs(EFarPlot)));xlabel('deg'), ylabel('deg');title('intensityFarField');axis equal;colorbar
 subplot(1,2,2);plotFarField2D(thetax,thetay,angle(EFarPlot));xlabel('deg'), ylabel('deg');title('phaseFarField')    ;axis equal;colorbar
 
-% 图如果太小，就需要插值放大
+% 图如果太小,比如每个pix都要算，就需要把图插值放大
 scalingRatio = 1;
 
 cmap = sinebow(256); % 这个调色板好看
@@ -194,6 +197,8 @@ wavefront_jones = imresize(wavefront_jones,scalingRatio*size(wavefront_jones(:,:
 
 visualizePolarization(wavefront_jones, cmap, 31);                          % 画偏振图
 
+disp(['程序运行完成'])
+toc
 
 % =========================================================================
 

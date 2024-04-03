@@ -13,7 +13,7 @@ addpath(genpath('../src'))
 %% 定义参数
 % physical parameters
 % 载入待计算的场
-load('./model/fdtd/E_Field.mat')
+load('E_Field.mat')
 xx = E.x;
 yy = E.y;
 
@@ -88,8 +88,8 @@ kx = pi/params.pxsize*(-1:2/(M-1):1);
 ky = pi/params.pxsize*(-1:2/(N-1):1);
 [kX,kY] = meshgrid(kx,ky);
 
-thetax = atand(kx/k0);
-thetay = atand(ky/k0);
+thetax = asind(kx/k0);
+thetay = asind(ky/k0);
 [thetaX,thetaY] = meshgrid(thetax,thetay);
 thetaOrig = thetax;
 
@@ -110,7 +110,7 @@ toc
 
 % 寻找角度截断index
 % 计算每个元素与a的绝对差值
-NALimitAngle=atand(NA)*2;
+NALimitAngle=asind(NA);
 diff = abs(thetaOrig - NALimitAngle);
 % 找到最小差值对应的索引
 [~, idx] = min(diff);
